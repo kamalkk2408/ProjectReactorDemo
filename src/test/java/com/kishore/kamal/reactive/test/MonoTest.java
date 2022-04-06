@@ -102,4 +102,50 @@ public class MonoTest {
 
         log.info("Execution Ends");
     }
+
+    @Test
+    public void monoSubscriberWithConsumerDoOnMethods(){
+        log.info("Execution Starts");
+        String name = "Will";
+        Mono<String> mono = Mono.just(name)
+                .map(String::toUpperCase)
+                .log()
+                .doOnSubscribe( s -> log.info("subscribed"))
+                .doOnNext(s -> log.info("doOnNext with val {}",s) )
+                .doOnNext(s -> log.info("doOnNext with val {}",s) )
+                .doOnRequest(s -> log.info("doOnRequest with val {}", s))
+                .doOnRequest(s -> log.info("doOnRequest with val {}", s))
+                .doOnSuccess(s -> log.info("doOnSuccess : {}",s));
+
+        log.info("---------");
+        mono.subscribe(s -> log.info("value is : {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("finished"),
+                subs -> subs.request(2));
+
+        log.info("Execution Ends");
+    }
+
+    @Test
+    public void monoSubscriberWithConsumerOnError(){
+        log.info("Execution Starts");
+        String name = "Will";
+        Mono<Object> mono = Mono.error(new IllegalArgumentException("Test Exception"))
+                .onErrorResume( s-> {
+                    log.error("onErrorResume : {}");
+                    return Mono.just("Handled Exception");
+                })
+                .onErrorReturn("Empty")
+                .doOnError(e -> log.error("Error : {}", e))
+                .log();
+
+        log.info("---------");
+        mono.subscribe(s -> log.info("value is : {}", s),
+                Throwable::printStackTrace,
+                () -> log.info("finished"),
+                subs -> subs.request(2));
+
+        log.info("Execution Ends");
+    }
+
 }
